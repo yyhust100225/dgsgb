@@ -3,14 +3,14 @@
     <div class="table-operations">
       <a-form layout="inline">
         <a-form-item>
-          <a-input v-model:value="queryParams.username" :allowClear="true" placeholder="用户名" />
+          <a-input v-model:value="queryParams.errorCode" :allowClear="true" placeholder="错误代码" />
         </a-form-item>
         <a-form-item>
           <a-button @click="tableSearchHandle">查询</a-button>
         </a-form-item>
       </a-form>
       <div class="table-buttons">
-        <a-button @click="addHandle">新增账户</a-button>
+        <a-button @click="addHandle">新增</a-button>
       </div>
     </div>
 
@@ -23,13 +23,12 @@
     >
       <template #bodyCell="{ record, column }">
 
-        <template v-if="column.dataIndex === 'status'">
-          <a-tag v-if="record.status == 0" color="red">CLOSE</a-tag>
-          <a-tag v-if="record.status == 1" color="green">OPEN</a-tag>
-        </template>
-
-        <template v-if="column.dataIndex === 'avatar'">
-          <a-avatar size="small" :src="record.avatar" />
+        <template v-if="column.dataIndex === 'errorType'">
+          <a-tag v-if="record.status === 1">技术职</a-tag>
+          <a-tag v-if="record.status === 2">机台端</a-tag>
+          <a-tag v-if="record.status === 3">作业员</a-tag>
+          <a-tag v-if="record.status === 4">换片</a-tag>
+          <a-tag v-if="record.status === 5">无效code</a-tag>
         </template>
 
         <template v-if="column.dataIndex === 'operation'">
@@ -56,8 +55,8 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { getAdministratorList, addAdministrator, editAdministrator, deleteAdministrator } from '@/apis/administrator';
-import { AdministratorFormParams, AdministratorListParams } from '@/type/administrator/FormState'
+import { getErrorMessageList, getErrorMessageById, getErrorMessageByErrorCode, addErrorMessage, editErrorMessage, deleteErrorMessage } from '@/apis/error-message-service';
+import { ErrorMessageFormParams } from '@/type/error-message-service/FormState'
 import AddOrUpdateView from './AddOrUpdateView.vue';
 import { message } from 'ant-design-vue';
 
@@ -68,24 +67,25 @@ export default defineComponent({
   methods: {
     asyncTableData() {
       this.loading = true;
-      getAdministratorList(this.queryParams).then(resp => {
+      getErrorMessageList(this.queryParams).then(resp => {
+        console.log("查询结果:", resp);
         this.dataSource = resp.data.list;
-        this.pagination.pageSize = resp.data.page_size
-        this.pagination.total = resp.data.total_count
-        this.pagination.current = resp.data.curr_page
+        this.pagination.pageSize = this.queryParams.MaxResultCount
+        this.pagination.total = resp.data.totalCount
+        this.pagination.current = this.queryParams.SkipCount
         this.loading = false;
       });
     },
     pageChangeHandle(page: { current: number, pageSize: number }) {
-      this.queryParams.page = page.current;
-      this.queryParams.page_size = page.pageSize;
+      this.queryParams.SkipCount = page.current;
+      this.queryParams.MaxResultCount = page.pageSize;
       this.asyncTableData();
     },
-    tableSearchHandle() { 
-      this.queryParams.page = 1;
+    tableSearchHandle() {
+      this.queryParams.SkipCount = 1;
       this.asyncTableData();
     },
-    addHandle() { 
+    addHandle() {
       this.model = {};
       this.visible = true;
     },
@@ -93,26 +93,26 @@ export default defineComponent({
       this.model = { ...record };
       this.visible = true;
     },
-    deleteHandle(id: number) {
-      deleteAdministrator(id).then(() => {
-        message.success("删除账户成功");
+    deleteHandle(id: string) {
+      deleteErrorMessage(id).then(() => {
+        message.success("删除错误消息成功");
         this.asyncTableData();
       });
     },
-    submitHandle(form: AdministratorFormParams) { 
+    submitHandle(form: ErrorMessageFormParams) {
       // 新增
-      if (form.administrator_id === 0) {
-        addAdministrator(form).then(() => {
-          message.success("新增账户成功");
+      if (form.id === 0) {
+        addErrorMessage(form).then(() => {
+          message.success("新增错误消息成功");
           this.visible = false;
           this.model = {};
           this.asyncTableData();
         });
       }
       // 编辑
-      else { 
-        editAdministrator(form).then(() => {
-          message.success("编辑账户成功");
+      else {
+        editErrorMessage(form).then(() => {
+          message.success("编辑错误消息成功");
           this.visible = false;
           this.model = {};
           this.asyncTableData();
@@ -131,10 +131,12 @@ export default defineComponent({
     return {
       dataSource: [],
       queryParams: {
-        username: "",
-        page: 1,
-        page_size: 10
-      } as AdministratorListParams,
+        id: "",
+        errorCode: "",
+        Sorting: "0",
+        SkipCount: 0,
+        MaxResultCount: 10,
+      },
       loading: false,
       pagination: {
         position: ['bottomRight'],
@@ -155,48 +157,37 @@ export default defineComponent({
         align: 'center',
         title: 'ID',
         dataIndex: 'id',
-        width: 40
+        width: 100
       },
       {
         align: 'center',
-        title: '用户名',
-        dataIndex: 'username',
-        width: 150,
-      },
-      {
-        align: 'center',
-        title: '昵称',
-        dataIndex: 'nickname',
-        width: 150,
-      },
-      {
-        align: 'center',
-        title: '邮箱',
-        dataIndex: 'email',
+        title: '错误编码',
+        dataIndex: 'errorCode',
         width: 200,
       },
       {
         align: 'center',
-        title: '头像',
-        dataIndex: 'avatar',
-        width: 50,
+        title: '警告内容',
+        dataIndex: 'alarmContent',
+        width: 200,
+      },
+      {
+        align: 'center',
+        title: '警告内容(中文)',
+        dataIndex: 'alarmContent_CH',
+        width: 200,
+        ellipsis: true
       },
       {
         align: 'center',
         title: '状态',
-        dataIndex: 'status',
+        dataIndex: 'errorType',
         width: 50,
       },
       {
         align: 'center',
-        title: '创建时间',
-        dataIndex: 'created_at',
-        width: 150,
-      },
-      {
-        align: 'center',
         title: '操作',
-        width: 120,
+        width: 80,
         dataIndex: 'operation',
       }
     ];

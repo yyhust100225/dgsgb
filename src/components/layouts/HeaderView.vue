@@ -40,7 +40,6 @@
 import { defineComponent, ref } from 'vue';
 import { MenuUnfoldOutlined, MenuFoldOutlined, SettingOutlined, AimOutlined, ExportOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import { logout } from '@/apis/auth';
 import { goLoginPage } from '@/common/functions';
 
 export default defineComponent({
@@ -80,12 +79,9 @@ export default defineComponent({
       this.$emit('flod', this.collapsed);
     },
     logout() { 
-      message.info("正在退出登陆...", 1, () => { 
-        logout().then(() => {
-          localStorage.setItem('accessToken', '');
-          message.success("退出登陆成功", 0.8, () => {
-            goLoginPage();
-          });
+      message.info("正在退出登陆...", 1, () => {
+        message.success("退出登陆成功", 0.8, () => {
+          console.log("退出登陆成功");
         });
       });
     }

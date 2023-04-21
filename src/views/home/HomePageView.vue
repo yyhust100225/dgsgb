@@ -6,7 +6,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { getHomePage } from '@/apis/home';
 
 export default defineComponent({
   data() {
@@ -16,9 +15,7 @@ export default defineComponent({
   },
   methods: {
     asyncHomePageData() {
-      getHomePage().then(resp => {
-        this.title = resp.data.homepage_title;
-      });
+      this.title = "DGSGB";
     }
   },
   mounted() {
